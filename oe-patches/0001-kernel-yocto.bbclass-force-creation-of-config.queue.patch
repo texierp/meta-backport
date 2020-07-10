@@ -1,0 +1,39 @@
+From ee4a3c5c973f4129ff24e9dab1f71a9305ac7070 Mon Sep 17 00:00:00 2001
+From: Pierre-Jean Texier <pjtexier@koncepto.io>
+Date: Fri, 10 Jul 2020 18:46:23 +0000
+Subject: [PATCH] kernel-yocto.bbclass: force creation of config.queue
+
+In the case of no patches or no configure fragments, during
+do_kernel_metadata() scc is not called, and thus
+kernel-sources/${meta_dir}/config.queue is not created.
+Later do_kernel_configme fails because the file is missing.
+
+| ERROR: Execution of 'run.do_kernel_configme.24874' failed with exit code 1:
+| exit 1 from 'configs="$(scc --configs -o ${meta_dir})"'
+
+Forcing at least an empty config.queue file fixes this.
+
+Fixes: 23dcff0d396c (kernel/yocto: ensure that defconfigs are processed first)
+Cc: Bruce Ashfield <bruce.ashfield@gmail.com>
+Signed-off-by: Max Krummenacher <max.krummenacher@toradex.com>
+Signed-off-by: Pierre-Jean Texier <pjtexier@koncepto.io>
+---
+ meta/classes/kernel-yocto.bbclass | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/meta/classes/kernel-yocto.bbclass b/meta/classes/kernel-yocto.bbclass
+index 54a1a1627a..fe3cb58ff5 100644
+--- a/meta/classes/kernel-yocto.bbclass
++++ b/meta/classes/kernel-yocto.bbclass
+@@ -220,6 +220,8 @@ do_kernel_metadata() {
+ 		if [ $? -ne 0 ]; then
+ 			bbfatal_log "Could not generate configuration queue for ${KMACHINE}."
+ 		fi
++       else
++               touch ${S}/${meta_dir}/config.queue
+ 	fi
+ 
+ 	# if KMETA_EXTERNAL_BSPS has been set, or it has been detected from
+-- 
+2.17.1
+
